@@ -9,7 +9,7 @@
 import Foundation
 
 struct DataAPI {
-    var videos: [VideoAPI]
+    var videos: [Video]
 }
 
 enum APIResult<T> {

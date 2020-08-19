@@ -11,15 +11,15 @@ import Contacts
 import ContactsUI
 
 class HomeViewController: UIViewController {
-    
     @IBOutlet weak var searchBar: UISearchBar!
     @IBOutlet weak var tableView: UITableView!
-    var viewModel = HomeViewModel()
     
-    var isSearching: Bool = false
+    private var viewModel = HomeViewModel()
     private var isLoadingMore = false
+    
     override func viewDidLoad() {
         super.viewDidLoad()
+        
         configTableView()
         loadAPI()
         searchBar.delegate = self
@@ -33,16 +33,11 @@ class HomeViewController: UIViewController {
         searchBar.delegate = self
     }
     
-    private func updateUI() {
-        tableView.reloadData()
-    }
-    
     func loadAPI() {
         viewModel.loadAPI { [weak self] (done, msg) in
             guard let self = self else { return}
             if done {
-                self.viewModel.dataAPISearch = self.viewModel.dataAPI
-                self.updateUI()
+                self.tableView.reloadData()
             } else {
                 let alert = UIAlertController(title: "Warning", message: msg, preferredStyle: .alert)
                 alert.addAction(UIAlertAction(title: "Yes", style: .default, handler: nil))
@@ -51,59 +46,21 @@ class HomeViewController: UIViewController {
         }
     }
 }
-extension HomeViewController: UITableViewDataSource {
 
+extension HomeViewController: UITableViewDataSource {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         return viewModel.numberOfRowInSection()
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        guard let cell = tableView.dequeueReusableCell(withIdentifier: "cell", for: indexPath as IndexPath) as? HomeTableViewCell else {return UITableViewCell()}
-        cell.viewModel = viewModel.viewModelForCell(at: indexPath)
-        let item = viewModel.dataAPI[indexPath.row]
-        viewModel.loadImage(urlString: item.url) { (image) in
-            if let image = image {
-                cell.configImage(image: image)
-            } else {
-                cell.configImage(image: nil)
-            }
+        guard let cell = tableView.dequeueReusableCell(withIdentifier: "cell", for: indexPath as IndexPath) as? HomeTableViewCell else {
+            return UITableViewCell()
         }
-        //print(viewModel.dataAPI[indexPath.row].titleVideo)
-//        if isSearching {
-//            cell.viewModel?.dataAPI = viewModel.dataAPI[indexPath.row]
-//            print(cell.viewModel?.dataAPI)
-//        } else {
-//            cell.viewModel?.dataAPI = viewModel.dataAPISearch[indexPath.row]
-//        }
-//        let item = viewModel.dataAPI[indexPath.row]
-//        let item2 = viewModel.dataAPISearch[indexPath.row]
-//        if isSearching {
-//           // cell.viewModel[indexPath.row] = item2
-//        } else {
-//            item
-//        }
+        let itemViewModel = viewModel.viewModelForCell(at: indexPath)
+        cell.bind(itemViewModel)
         return cell
-//        let item = viewModel.dataAPISearch[indexPath.row]
-//        viewModel.loadImage(urlString: item.url) { (image) in
-//            if let image = image {
-//                cell.configImage(image: image)
-//            } else {
-//                cell.configImage(image: nil)
-//            }
-//        }
-//        return cell
     }
 }
-//extension HomeViewController: UISearchBarDelegate {
-//    func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
-//        let upperText = searchText.uppercased()
-//        viewModel.titleSearchs = viewModel.titleVideos.filter {
-//            $0.uppercased().hasPrefix(upperText)
-//        }
-//        viewModel.search()
-//        tableView.reloadData()
-//    }
-//}
 extension HomeViewController: UITableViewDelegate {
     func scrollViewDidScroll(_ scrollView: UIScrollView) {
         let contentOffset = scrollView.contentOffset.y
@@ -118,18 +75,10 @@ extension HomeViewController: UITableViewDelegate {
         }
     }
 }
-//extension HomeViewController: UITableViewDataSource {
-//
-//}
 
 extension HomeViewController: UISearchBarDelegate {
     func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
-//        var searchResult: [DataAPI] = []
-//        isSearching = searchText != ""
-//        for item in viewModel.dataAPI  {
-//            searchResult.append(DataAPI)
-//        }
-////        viewModel.dataAPI. = searchResult
-//        tableView.reloadData()
+        viewModel.search(searchText)
+        tableView.reloadData()
     }
 }

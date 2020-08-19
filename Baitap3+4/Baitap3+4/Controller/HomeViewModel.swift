@@ -12,11 +12,13 @@ import UIKit
 typealias Completion = (Bool, String?) -> Void
 
 class HomeViewModel {
-    var titleVideos: [String] = []
-    var titleSearchs: [String] = []
-    var dataAPI: [VideoAPI] = []
-    var dataAPISearch: [VideoAPI] = []
-    static var cache: [String: UIImage] = [:]
+    private var allVideos: [Video]
+    private var videos: [Video]
+    
+    init() {
+        allVideos = []
+        videos = []
+    }
     
     func loadAPI(completion: @escaping Completion) {
         Networking.shared().request { (apiResult: APIResult<DataAPI>) in
@@ -24,84 +26,32 @@ class HomeViewModel {
             case.error(let stringError):
                 completion(false, stringError)
             case.success(let result):
-                let array = result.videos
-                for item in array {
-                    self.dataAPI.append(item)
-                }
-                completion(true, "stringError")
+                self.allVideos = result.videos
+                self.videos.append(contentsOf: self.allVideos)
+                completion(true, nil)
             }
         }
     }
-    // let urlString = Networking.urlString
-    //        Networking.shared().request(with: urlString) { (data, error) in
-    //            if let error = error {
-    //                completion(false, error.localizedDescription)
-    //            } else {
-    //                if let data = data {
-    //                    let json = data.toJSON()
-    //                    guard let items = json["items"] as? [JSON] else {return }
-    //                    for item in items {
-    //                        guard let snippet = item["snippet"] as? JSON, let title = snippet["title"] as? String, let publishedAt = snippet["publishedAt"] as? String, let channelTitle = snippet["channelTitle"] as? String, let thumbnail = snippet["thumbnails"] as? JSON, let defaultAPI = thumbnail["default"] as? JSON, let urlAPI = defaultAPI["url"] as? String else { return }
-    //                        let dataAPI = VideoAPI()
-    //                        dataAPI.titleVideo = title
-    //                        dataAPI.channelTitle = channelTitle
-    //                        dataAPI.publishedAt = publishedAt
-    //                        dataAPI.url = urlAPI
-    //                        self.dataAPI.append(dataAPI)
-    //                        self.titleVideos.append(title)
-    //                    }
-    //                    completion(true, nil)
-    //                }
-    //                else {
-    //                    completion(false, "Data format is error ")
-    //                }
-    //            }
-    //        }
-    //    }
     
-    func loadImage(urlString: String, completion: @escaping (UIImage?) -> Void) {
-        if let image = HomeViewModel.cache[urlString] {
-            completion(image)
+    func search(_ searchText: String) {
+        videos.removeAll()
+        guard !searchText.isEmpty else {
+            videos.append(contentsOf: allVideos)
             return
         }
-        guard let url = URL(string: urlString) else {
-            completion(nil)
-            return
-        }
-        let config = URLSessionConfiguration.default
-        config.waitsForConnectivity = true
-        let session = URLSession(configuration: config)
-        let task = session.dataTask(with: url) { (data, response, error) in
-            DispatchQueue.main.async {
-                if let data = data, let image = UIImage(data: data) {
-                    HomeViewModel.cache[urlString] = image
-                    completion(image)
-                } else {
-                    completion(nil)
-                }
+        for video in allVideos {
+            if video.title.uppercased().contains(searchText.uppercased()) {
+                videos.append(video)
             }
         }
-        task.resume()
-    }
-    func search() {
-        var datas: [VideoAPI]  = []
-        for item in dataAPI {
-            for item2 in titleSearchs {
-                if item2 == item.titleVideo {
-                    datas.append(item)
-                }
-            }
-        }
-        dataAPISearch = datas
     }
     
     func numberOfRowInSection() -> Int {
-        return dataAPISearch.count
+        return videos.count
     }
     
     func viewModelForCell(at indexPath: IndexPath) -> HomeCellViewModel {
-        let item = dataAPISearch[indexPath.row]
-        let viewModel = HomeCellViewModel(dataAPI: item)
-        return viewModel
+        let video = videos[indexPath.row]
+        return HomeCellViewModel(video)
     }
 }

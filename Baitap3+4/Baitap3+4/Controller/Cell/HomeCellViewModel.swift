@@ -6,14 +6,22 @@
 //  Copyright © 2563 BE asiantech. All rights reserved.
 //
 
-import Foundation
+import UIKit
 
 class HomeCellViewModel {
+    let titleVideo: String
+    let channelTitle: String
+    let publishedAt: String
+    let imageURL: String
     
-    var dataAPI: VideoAPI
+    init(_ video: Video) {
+        titleVideo = video.title
+        channelTitle = video.channel
+        publishedAt = video.publishedAt
+        imageURL = video.url
+    }
     
-    init(dataAPI: VideoAPI ) {
-        self.dataAPI = dataAPI
+    func loadImage(completion: @escaping (UIImage?) -> Void) {
+        ImageCache.loadImage(urlString: imageURL, completion: completion)
     }
 }
-

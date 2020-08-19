@@ -24,7 +24,6 @@ class Networking {
     private init() {}
     
     func request(completion: @escaping(APICompletion<DataAPI>)) {
-        var videos: [VideoAPI] = []
         guard let url = URL(string: urlString) else {
             let error = APIResult<DataAPI>.error("URL Error ")
             completion(error)
@@ -36,50 +35,24 @@ class Networking {
         let session = URLSession(configuration: config)
         let task = session.dataTask(with: url) {(data, response, error ) in
             DispatchQueue.main.async {
-                if let _ = error {
+                guard error == nil else {
                     completion(APIResult<DataAPI>.error("Error "))
-                } else {
-                    if let data = data {
-                        let json = data.toJSON()
-                        guard let items = json["items"] as? [JSON] else {return }
-                        for item in items {
-                            guard let snippet = item["snippet"] as? JSON, let title = snippet["title"] as? String, let publishedAt = snippet["publishedAt"] as? String, let channelTitle = snippet["channelTitle"] as? String, let thumbnail = snippet["thumbnails"] as? JSON, let defaultAPI = thumbnail["default"] as? JSON, let urlAPI = defaultAPI["url"] as? String else { return }
-                            let video = VideoAPI(json: item)
-                            video.titleVideo = title
-                            video.channelTitle = channelTitle
-                            video.url = urlAPI
-                            video.publishedAt = publishedAt
+                    return
+                }
+                
+                var videos: [Video] = []
+                if let data = data {
+                    let json = data.toJSON()
+                    guard let items = json["items"] as? [JSON] else {return }
+                    for item in items {
+                        if let snippet = item["snippet"] as? JSON, let video = Video(snippet) {
                             videos.append(video)
                         }
-                        completion(.success(DataAPI(videos: videos)))
                     }
                 }
+                completion(.success(DataAPI(videos: videos)))
             }
         }
         task.resume()
     }
-//    func request(with urlString: String, completion: @escaping (Data?, APIError?) -> Void ) {
-//        guard let url = URL(string: urlString) else {
-//            let error = APIError.error("URL Failed ")
-//            completion(nil, error)
-//            return
-//        }
-//        let config = URLSessionConfiguration.ephemeral
-//        config.waitsForConnectivity = true
-//        let session = URLSession(configuration: config)
-//        let task = session.dataTask(with: url) { (data, response, error ) in
-//            DispatchQueue.main.async {
-//                if let error = error {
-//                    completion(nil, APIError.error(error.localizedDescription))
-//                } else {
-//                    if let data = data {
-//                        completion(data, nil)
-//                    } else {
-//                        completion(nil, APIError.error("Data format is error "))
-//                    }
-//                }
-//            }
-//        }
-//        task.resume()
-//    }
 }

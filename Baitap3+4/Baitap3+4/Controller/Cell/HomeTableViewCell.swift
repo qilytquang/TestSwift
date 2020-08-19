@@ -9,28 +9,20 @@
 import UIKit
 
 class HomeTableViewCell: UITableViewCell {
-
     @IBOutlet weak var titleVideoLabel: UILabel!
     @IBOutlet weak var channelTitleLabel: UILabel!
     @IBOutlet weak var thumbnailImageView: UIImageView!
     @IBOutlet weak var publishedAtLabel: UILabel!
     
-    var viewModel: HomeCellViewModel? {
-        didSet {
-            updateUI()
+    func bind(_ viewModel: HomeCellViewModel) {
+        titleVideoLabel.text = viewModel.titleVideo
+        channelTitleLabel.text = viewModel.channelTitle
+        publishedAtLabel.text = viewModel.publishedAt
+        thumbnailImageView.image = nil
+        
+        viewModel.loadImage { [weak self] image in
+            guard let self = self else { return }
+            self.thumbnailImageView.image = image
         }
     }
-
-    func updateUI() {
-        guard let viewModel = viewModel else {return }
-        let dataAPI = viewModel.dataAPI
-        titleVideoLabel.text = dataAPI.titleVideo
-        channelTitleLabel.text = dataAPI.channelTitle
-        publishedAtLabel.text = dataAPI.publishedAt
-    }
-    
-    func configImage(image: UIImage?) {
-        thumbnailImageView.image = image
-    }
-    
 }
